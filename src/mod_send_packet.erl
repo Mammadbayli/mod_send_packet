@@ -48,7 +48,7 @@ mod_opt_type(remote_url) ->
   fun iolist_to_binary/1.
 
 process_packet({#message{type = T} = Packet, _C2SState} = Acc) when T == chat ->
-    ?INFO_MSG("Send packet hook ~p~n", [Packet]),
+    ?INFO_MSG("Send packet hook", []),
     Vhost = (Packet#message.to)#jid.lserver,
     BadgeCount = mod_offline:get_queue_length((Packet#message.to)#jid.luser, Vhost),
     forward_message(Packet, BadgeCount),
@@ -58,11 +58,11 @@ process_packet(Acc) ->
     Acc.
 
 process_packet_offline({Action, Packet} = Acc) when (Packet#message.type == chat) ->
-    ?INFO_MSG("Send packet offline chat ~p~n", [Packet]),
+    ?INFO_MSG("Send packet offline chat", []),
     Acc;
 
 process_packet_offline({Action, Pkt} = Acc) ->
-    ?INFO_MSG("Send packet offline groupchat ~p~n", [Pkt]),
+    ?INFO_MSG("Send packet offline groupchat", []),
     Packet = unwrap_message(Pkt),
     Vhost = (Packet#message.to)#jid.lserver,
     BadgeCount = mod_offline:get_queue_length((Packet#message.to)#jid.luser, Vhost),
