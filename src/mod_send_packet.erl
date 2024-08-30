@@ -97,5 +97,5 @@ forward_message(Packet, BadgeCount) ->
     "}"], ""),
 
     Request = {binary_to_list(RemoteUrl), [{"Authorization", binary_to_list(Token)}], "application/json", Data},
-    httpc:request(post, Request,[],[]).
+    httpc:request(post, Request,[],[{sync, false}]).
 
