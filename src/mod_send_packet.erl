@@ -51,7 +51,12 @@ process_packet({#message{type = T} = Packet, _C2SState} = Acc) when T == chat ->
     ?INFO_MSG("Send packet hook", []),
     Vhost = (Packet#message.to)#jid.lserver,
     BadgeCount = mod_offline:get_queue_length((Packet#message.to)#jid.luser, Vhost),
-    forward_message(Packet, BadgeCount),
+    forward_message(Packet, BadgeCount, 0),
+    Acc;
+
+process_packet({#message{type = T} = Packet, _C2SState} = Acc) when T == groupchat ->
+    ?INFO_MSG("Send packet hook", []),
+    forward_message(Packet, 0, 0),
     Acc;
 
 process_packet(Acc) ->
@@ -66,7 +71,7 @@ process_packet_offline({Action, Pkt} = Acc) ->
     Packet = unwrap_message(Pkt),
     Vhost = (Packet#message.to)#jid.lserver,
     BadgeCount = mod_offline:get_queue_length((Packet#message.to)#jid.luser, Vhost),
-    forward_message(Packet, BadgeCount),
+    forward_message(Packet, BadgeCount, 1),
     Acc;
 
 process_packet_offline(Acc) ->
@@ -83,17 +88,16 @@ unwrap_message(#message{type = normal} = Msg) ->
 unwrap_message(Stanza) ->
     Stanza.
 
-forward_message(Packet, BadgeCount) ->
-    To = Packet#message.to,
-
-    RemoteUrl = gen_mod:get_module_opt(To#jid.lserver, ?MODULE, remote_url),
-    Token = gen_mod:get_module_opt(To#jid.lserver, ?MODULE, auth_token),
+forward_message(Packet, BadgeCount, Offline) ->
+    RemoteUrl = gen_mod:get_module_opt(ejabberd_config:get_myname(), ?MODULE, remote_url),
+    Token = gen_mod:get_module_opt(ejabberd_config:get_myname(), ?MODULE, auth_token),
   
     Stanza = binary_to_list(fxml:element_to_binary(xmpp:encode(Packet))),
      
      Data = string:join(["{",
         "\"stanza\": \"", Stanza, "\", ",
-        "\"badge\": \"", integer_to_list(BadgeCount), "\"",
+        "\"badge\": \"", integer_to_list(BadgeCount), "\", ",
+	"\"offline\": \"", integer_to_list(Offline), "\"", 
     "}"], ""),
 
     Request = {binary_to_list(RemoteUrl), [{"Authorization", binary_to_list(Token)}], "application/json", Data},
